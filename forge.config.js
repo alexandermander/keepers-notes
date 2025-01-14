@@ -37,14 +37,24 @@ module.exports = {
 					config: './webpack.renderer.config.js',
 					entryPoints: [
 						{
+							// This is your main window
+							name: 'main_window',
 							html: './src/renderer/index.html',
 							js: './src/renderer/renderer.js',
-							name: 'main_window',
 							preload: {
-								js: './src/main/preload.js',
-							},
+								js: './src/main/preload.js'
+							}
 						},
+						{
+							name: 'notes_window',
+							html: './src/renderer/pages/notes/notes.html',
+							js: './src/renderer/pages/notes/notes_renderer.js',
+							preload: {
+								js: './src/main/preload.js'
+							}
+						}
 					],
+
 				},
 			},
 		},

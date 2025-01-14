@@ -1,14 +1,17 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+// const { app, BrowserWindow, ipcMain } = require('electron');
 import started from 'electron-squirrel-startup';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+
 if (started) {
 	app.quit();
 }
 
 let mainWindow;
+
 
 const createWindow = () => {
 	// Create the browser window.
@@ -27,18 +30,28 @@ const createWindow = () => {
 	mainWindow.webContents.openDevTools();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
 	createWindow();
 
-	ipcMain.on('set-log', (event, title) => {
-		mainWindow.loadFile(`src/renderer/pages/notes.html`);
+	ipcMain.on('save-temp-note', (event, note) => {
+		saveInTemp(note);
 	});
 
-	// On OS X it's common to re-create a window in the app when the
-	// dock icon is clicked and there are no other windows open.
+
+	//save-in-folder', folder)
+	ipcMain.on('save-in-folder', (event, folder) => {
+		saveInFolder(folder);
+	});
+
+	ipcMain.on('set-log', (event, title) => {
+		console.log("file://", __dirname);
+	});
+
+	ipcMain.handle('get-folders', async (event) => {
+		const folders = getFolders();
+		return folders;
+	});
+
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) {
 			createWindow();
@@ -55,6 +68,40 @@ app.on('window-all-closed', () => {
 	}
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+function saveInTemp(note) {
+	const tempDir = os.tmpdir();
+	const filePath = path.join(tempDir, 'keepersNotes', 'tempNote.txt');
+	const fileDir = path.dirname(filePath);
 
+	if (!fs.existsSync(fileDir)) {
+		fs.mkdirSync(fileDir, { recursive: true });
+	}
+
+	fs.writeFileSync(filePath, note);
+
+}
+
+function getFolders() {
+	//const filePath = path.join(tempDir, 'keepersNotes');
+	const filePath = path.join(app.getPath('documents'), 'keepersNotes');
+	if (!fs.existsSync(filePath)) {
+		fs.mkdirSync(filePath, { recursive: true });
+	}
+
+	const folders = fs.readdirSync(filePath);
+	console.log('folders:', folders);
+	return folders;
+}
+
+function saveInFolder(notesAndFolder) {
+	const { saveName, noteDataString, folder } = notesAndFolder;
+	const folderPath = path.join(app.getPath('documents'), 'keepersNotes', folder);
+	const filePath = path.join(folderPath, `${saveName}.kep`);
+
+	if (!fs.existsSync(folderPath)) {
+		fs.mkdirSync(folderPath, { recursive: true });
+	}
+
+	fs.writeFileSync(filePath, noteDataString);
+
+}

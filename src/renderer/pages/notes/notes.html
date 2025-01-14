@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keepers notes</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #1d1d1d; 
+      color: #ffffff; 
+      display: flex;
+      flex-direction: column;
+      height: 100vh; 
+    }
+	h1, h2, h3, h4, h5, h6, p, ul, ol, li, blockquote, pre, code {
+		margin: 0;
+	}
+    .editor {
+      flex-grow: 1;
+      padding: 0 16px;
+      font-size: 16px;
+      line-height: 1.5;
+      border: none;
+      outline: none;
+      background-color: #1d1d1d;
+      color: #ffffff; 
+      resize: none;
+	  overflow: hidden;
+    }
+
+	.selected-image {
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 123, 255, 0.8);
+		transform: scale(1.1);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+		z-index: 10; /* Make sure it appears above other elements */
+	}
+	img {
+		/*  Make thwne nice and rounded coruienser */
+		border-radius: 10px;
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+    .editor:focus {
+      outline: none;
+    }
+
+
+	  .folder-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8); /* Darker overlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+  }
+
+  .folder-popup.hidden {
+    display: none;
+  }
+
+  .folder-container {
+    background: #1e1e2f; /* Dark background with slight blue tone */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6); /* Softer shadow */
+    width: 300px;
+  }
+
+  .folder-container h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #d1d1e6; /* Soft white for contrast */
+    text-align: center;
+  }
+
+  .folder-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 6px;
+    background: #252537; /* Slightly lighter than container */
+    border: 1px solid #343454; /* Subtle border */
+  }
+
+  .folder-list li {
+    border-radius: 6px;
+    color: #e0e0f0; /* Softer text color */
+    margin: 8px;
+    padding: 10px;
+    background: #2e2e4a; /* Neutral hover-friendly background */
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Adds 3D pop-out effect */
+  }
+
+  .folder-list li:hover {
+    background: #3a3a5c; /* Hover background */
+    transform: translateY(-4px); /* Pop-out effect */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6); /* Enhanced shadow on hover */
+  }
+
+  .create-folder-btn {
+    margin-top: 15px;
+    padding: 10px 16px;
+    background: #5a5ad5; /* Bright blue-purple */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .create-folder-btn:hover {
+    background: #7272f5; /* Slightly brighter hover color */
+    transform: scale(1.05); /* Slightly enlarges on hover */
+  }
+    .search-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark overlay */
+      backdrop-filter: blur(10px); /* Blur effect */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000; /* Ensure it's above the SVG */
+    }
+
+    /* Hide the popup by default */
+    .hidden {
+      display: none;
+    }
+
+    /* The search bar */
+	  .folder-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark overlay */
+  backdrop-filter: blur(10px); /* Blur effect */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above the SVG */
+  }
+
+  .folder-popup.hidden {
+    display: none;
+  }
+
+  .folder-container {
+    background: #1e1e2f; /* Dark background with slight blue tone */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6); /* Softer shadow */
+    width: 300px;
+  }
+
+  .folder-container h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #d1d1e6; /* Soft white for contrast */
+    text-align: center;
+  }
+.folder-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: none; /* Remove background if needed */
+  border: none; /* Ensure no border exists */
+  box-shadow: none; /* Remove any shadow */
+}
+
+	.folder-list li {
+  border-radius: 6px;
+  color: #e0e0f0;
+  margin: 8px;
+  padding: 10px;
+  background: #2e2e4a;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.folder-list li:hover,
+.folder-list li:focus,
+.folder-list li:active {
+  background: #3a3a5c; /* Highlight on hover or tap */
+  transform: translateY(-2px); /* Subtle lift effect */
+  outline: none; /* Remove default browser outline */
+}
+
+  .create-folder-btn {
+    margin-top: 15px;
+    padding: 10px 16px;
+    background: #5a5ad5; /* Bright blue-purple */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s, transform 0.2s;
+  }
+
+  .create-folder-btn:hover {
+    background: #7272f5; /* Slightly brighter hover color */
+    transform: scale(1.05); /* Slightly enlarges on hover */
+  }
+
+  .search-bar {
+    background-color: #1e1e2f; /* Matches dark theme */
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6); /* Softer shadow */
+    display: flex;
+    align-items: center;
+  }
+
+  .search-bar input {
+    border: none;
+    outline: none;
+    background-color: #252537; /* Slightly lighter than container */
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 25px;
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAA01JREFUeAHtnctu1TAQhv+qO8qSJ+gWyg4BErBFSKiw4UFgAxJCwKqIh6B7Lm/Cvu2DlIsEgkzBOtGRMnaOp41n/FuKzmliW873ecaJ0jYACwmQAAmQAAmQAAmQAAmQAAnEILAN4B6AtwAOAXxsYHsaA+38s3gM4ATAnwa3N/NPx2+LLQDvG5SwPjG6kfLKgYwk553feV828usAfjsSImJCS/niTEaKlJDp6zKA706FhIyUW45lpEgJlb4eFQhZ4j7kM4CfBWNLUsKkrycFJ112aWBf6wGAHwXjS1JCRErLQkRxd1JaF9KdFA9CupLiRUg3UjwJ6UKKNyHhpXgUElqKVyFhpXgWElKKdyHhpEQQEkpKFCFhpEQSEkJKNCHupUQU4lpKVCEiZX/mQ6770mjpElmIsJ3zPEVYLF6iCxHApVIo5AKno6Sv9Kh36rNbIVeGXz16ntmkjnWZEpH2dyvkasFslTrWJYGf+qQQRQyFKHCsZyojRCEqYToVwmm/0nyjQxSiYKOQ1YTkGqJEJ9cQBY4SYBsdYspSsDFlMWWBEcIIOSOQrhqnPrmoK+sWF3UFjhJgGx1iylKwWSzq8hdWU2ngovbLGHIlN5YwKYtCclNhxnFGyCq6GSGGqY4paxSFTFkjGLVfmbKYss7liowpaxSaTFkjGLVfLVLWbQDST+n2rGAxlzql/Uk9GUOudHMfkgOxfpx36utERj/L7MrNnFF1k68UomCkkNWEFBaLFwqhED6g0sKQEcIIYYQwQv4RyF1NclFXLrn5CFeBo0XYJsd4H6JQ46LORR27AL5mNqljXbiGWBOt7I9CKgFaN6cQa6KV/VFIJUDr5hRiTbSyPwqpBGjdnEKsiVb2RyGVAK2bU4g10cr+KKQSoHVzCrEmWtkfhVQCtG7uQkirrzyS34a03nJChMXi5abyHCR3AtGO31jcxvC61UsATikF3wDstCBExiBvRIs22+eez6dWZMg49gD86liKnPu1loTIWF52LORFazJkPPL6bnkP4NxQ917/4P+5t+jkbEzy3zuPOxBzNDzTf9ishbWBbQO4O+yT15kensP9gPX9RWl/H4aJ9hrAHQByjiwkQAIkQAIkQAIkQAIkQAIk4J7AX0QX7pvIFgRaAAAAAElFTkSuQmCC");
+      background-size: 16px;
+	
+      background-repeat: no-repeat;
+      background-position: 16px center;
+
+    font-weight: 500;
+    padding: 10px 20px 10px 40px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Adds subtle depth */
+    color: #d1d1e6; /* Soft text color for contrast */
+  }
+
+  .search-bar input::placeholder {
+    font-family: Arial, sans-serif;
+    color: #888; /* Muted placeholder color */
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+
+  </style>
+</head>
+<body>
+  <div class="editor" contenteditable="true"></div>
+  <div id="search-popup" class="search-popup hidden">
+    <div class="search-bar">
+      <input type="text" placeholder="">
+    </div>
+  </div>
+
+		<div id="folder-popup" class="folder-popup hidden">
+  <div class="folder-container">
+    <h3>Select Folder</h3>
+    <ul id="folder-list" class="folder-list">
+      <!-- Dummy folders will be dynamically inserted here -->
+    </ul>
+    <button id="create-folder" class="create-folder-btn">+ Create New Folder</button>
+  </div>
+</div>
+
+</body>
+</html>

@@ -14,13 +14,46 @@
  */
 
 import './index.css';
-
 import { setupKeydownHandler } from './components/createNewFile';
 
+import { library, dom } from '@fortawesome/fontawesome-svg-core';
+import { faSmile } from '@fortawesome/free-regular-svg-icons';
+
+library.add(faSmile);
+
+// Automatically replace <i> tags with SVGs
+
+dom.watch();
+
+
 console.log('👋 This message is being logged by "renderer.js", included via webpack');
-
-
 setupKeydownHandler();
+
+async function getFolders() {
+	const folders = await window.windowAPI.getFolders();
+	console.log('folders', folders);
+	return folders
+}
+
+getFolders().then((folders) => {
+	folders.forEach((folder) => {
+		// Select the SVG container
+		const svgContainer = document.getElementById('zoomable-svg');
+
+		// Create an <i> element for the FontAwesome icon
+		const iconElement = document.createElement('i');
+		iconElement.className = 'fas fa-folder'; // Use the class for a folder icon
+
+		// Optionally, add attributes or data to the icon element
+		iconElement.setAttribute('data-folder-name', folder);
+
+		// Append the icon to the SVG container
+		svgContainer.appendChild(iconElement);
+	});
+
+	// Watch and replace <i> with SVGs
+	dom.watch();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
 	const svg = document.getElementById('zoomable-svg');
@@ -137,4 +170,3 @@ document.addEventListener('DOMContentLoaded', () => {
 		}
 	});
 });
-

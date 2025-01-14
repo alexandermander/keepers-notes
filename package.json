@@ -31,6 +31,10 @@
   "author": "alexa",
   "license": "MIT",
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.1"
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "electron-squirrel-startup": "^1.0.1",
+    "marked": "^15.0.6",
+    "turndown": "^7.2.0"
   }
 }
