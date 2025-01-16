@@ -31,26 +31,32 @@ async function getFolders() {
 
 function createFiles(draggable) {
 	const files = [];
-	const centerX = parseFloat(draggable.getAttribute('x')) || 0; // Icon's x position
-	const centerY = parseFloat(draggable.getAttribute('y')) || 0; // Icon's y position
-	const spacing = 60; // Vertical spacing between files
+	const centerX = parseFloat(draggable.getAttribute('x')) || 0;
+	const centerY = parseFloat(draggable.getAttribute('y')) || 0;
+	const spacing = 60;
+	const angles = [-15, 0, 15]; // Different angles for the files
 
-	// Example: Create 3 files in a vertical stack
 	for (let i = 0; i < 3; i++) {
-		const yOffset = (i + 1) * spacing; // Increment yOffset for vertical stacking
+		const yOffset = (i + 1) * spacing;
+		const rotationAngle = angles[i];
 
 		const file = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		file.setAttribute("class", `file-${draggable.id} render`); // Associate with the parent
-		file.setAttribute("width", "100"); // File width
-		file.setAttribute("height", "50"); // File height
-		file.setAttribute("x", centerX); // Align with the icon's x position
-		file.setAttribute("y", centerY + yOffset); // Stack below the icon
-		file.setAttribute("fill", "#3b82f6"); // File color
-		file.setAttribute("rx", "5"); // Rounded corners
+		file.setAttribute("class", `file-${draggable.id} render`);
+		file.setAttribute("width", "25");
+		file.setAttribute("height", "50");
+		file.setAttribute("x", centerX);
+		file.setAttribute("y", centerY + yOffset);
+		file.setAttribute("fill", "#3b82f6");
+		file.setAttribute("rx", "5");
+
+		// Apply rotation transform
+		file.setAttribute("transform", `rotate(${rotationAngle}, ${centerX + 50}, ${centerY + yOffset + 25})`);
+
 		files.push(file);
 	}
 	return files;
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
 	const svg = document.getElementById('zoomable-svg');
@@ -61,24 +67,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const addIcons = (iconList) => {
 		iconList.forEach((icon) => {
-			const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+			// 1) Create a <g> for positioning+rotation
+			const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-			// Generate random position within the SVG
-			const randomX = Math.random() * 800; // Assuming the SVG is 1024x1024
+			// Generate random position
+			const randomX = Math.random() * 800;
 			const randomY = Math.random() * 800;
 
-			// Generate random size within a reasonable range
-			const randomSize = Math.floor(Math.random() * 50) + 50; // Sizes between 50px and 100px
+			// Generate random size
+			const randomSize = Math.floor(Math.random() * 50) + 50;
 
-			foreignObject.classList.add('draggable');
+			// 2) Translate <g> to the desired "world" position
+			//    We’ll rotate around this point later
+			g.setAttribute("transform", `translate(${0}, ${0})`);
+
+			// 3) Create the <foreignObject> *centered* on (0,0) of the <g>
+			const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+			// Move its top-left corner so that (0,0) is the center
 			foreignObject.setAttribute("x", randomX);
 			foreignObject.setAttribute("y", randomY);
 			foreignObject.setAttribute("width", randomSize);
 			foreignObject.setAttribute("height", randomSize);
 
-			// Add the icon with random font size
-			foreignObject.innerHTML = `<i class="render fa ${icon}" style="font-size: ${randomSize}px;"></i>`;
-			svg.appendChild(foreignObject);
+			foreignObject.classList.add('draggable');
+			// Add the icon HTML
+			foreignObject.innerHTML = `<i class="render fa ${icon}" 
+                                  style="font-size: ${randomSize}px;"></i>`;
+
+			// 4) Append the <foreignObject> to the <g>, then <g> to the <svg>
+			g.appendChild(foreignObject);
+			svg.appendChild(g);
+
+			// Optional: Store references if needed for dragging, etc.
 		});
 	};
 
@@ -87,20 +107,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const draggables = document.querySelectorAll('.draggable');// is a svg element with class draggable
 	draggables.forEach((draggable) => {
+
 		draggable.addEventListener('dblclick', () => {
-			const container = draggable.closest('svg'); // Get the SVG container
-			const isOpen = draggable.dataset.open === "true"; // Check current state
+			const container = draggable.closest('svg');
+			const isOpen = draggable.dataset.open === "true";
 
 			if (isOpen) {
-				// Close the icon and remove the files
+				// Close the icon, remove the twist
+				draggable.classList.remove('icon-twist');
+
+				// Remove the files
 				const files = container.querySelectorAll(`.file-${draggable.id}`);
 				files.forEach(file => file.remove());
-				draggable.dataset.open = "false"; // Update state
+				draggable.dataset.open = "false";
+
 			} else {
-				// Open the icon and display files
-				const files = createFiles(draggable); // Generate file icons dynamically
-				files.forEach(file => container.appendChild(file));
-				draggable.dataset.open = "true"; // Update state
+				// Open the icon, add the twist
+				draggable.classList.add('icon-twist');
+				draggable.dataset.open = "true";
+
+				// Create & append files
+				//const files = createFiles(draggable);
+				//files.forEach((file, i) => {
+				//	// Add the fade in class
+				//	file.classList.add('file-fade-in');
+
+				//	// OPTIONAL: Stagger the animation start
+				//	// This creates a small delay for each subsequent file
+				//	file.style.animationDelay = `${i * 0.1}s`;
+
+				//	container.appendChild(file);
+				//});
+				//draggable.dataset.open = "true";
 			}
 		});
 
@@ -141,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			// Remove event listeners when the mouse is released
 			const onMouseUp = () => {
-				draggable.style.cursor = 'grab'; // Reset cursor
+				draggable.style.cursor = 'move';
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
 			};
@@ -151,7 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
 			document.addEventListener('mouseup', onMouseUp);
 		});
 
-		draggable.style.cursor = 'grab';
+		// i want a more dark cursor when the mouse is over the svg element
+		draggable.style.cursor = "move";
 	});
 
 
