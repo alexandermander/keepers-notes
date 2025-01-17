@@ -1,9 +1,5 @@
 const { marked } = require('marked');
-
-//import addIcons from "../../util/add_icons"; // this add the icons to the library
-const { addIcons } = require('../../util/add_icons');
-
-addIcons();
+import addIcons from "../../util/add_icons"; // this add the icons to the library
 
 const folderList = document.getElementById('folder-list');
 const editor = document.querySelector('.editor');
@@ -339,5 +335,4 @@ document.addEventListener('keydown', (event) => {
 		folderPopup.classList.add('hidden');
 	}
 });
-
 

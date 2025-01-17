@@ -5,6 +5,8 @@
   <title>Zoomable SVG with Icons</title>
   <style>
 		#svg-container {
+
+user-select: none;
   width: 100%;
   height: 100%;
   background-color: #1e1e2f; /* Matches the dark theme */
@@ -19,15 +21,35 @@
   transform-origin: center center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
+
 .render {
-  will-change: transform;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  will-change: auto; /* Avoid unnecessary GPU optimizations */
+  transform: translateZ(0); /* Forces hardware acceleration */
+  shape-rendering: crispEdges;
+
+}
+/* create so when a file is dbelpres the file with this css wil fade in one by one */
+.fade-in {
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
 }
 
-.file-animate {
-  transform: scale(1.2);
-  opacity: 0.5;
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
+
+.fade-out {
+	opacity: 1;
+	animation: fadeOut 0.5s ease forwards;
+}
+
+@keyframes fadeOut {
+	from { opacity: 1; }
+	to { opacity: 0; }
+}
+
+
   </style>
 </head>
 <body>

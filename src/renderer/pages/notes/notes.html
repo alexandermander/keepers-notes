@@ -28,7 +28,6 @@
       background-color: #1d1d1d;
       color: #ffffff; 
       resize: none;
-	  overflow: hidden;
     }
 
 	.selected-image {
@@ -102,6 +101,19 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4); /* Adds 3D pop-out effect */
   }
 
+.folder-list input {
+    border-radius: 6px;
+    color: #e0e0f0;
+	width: 247px;
+    margin-left: 8px;
+    padding: 10px;
+    background: #2e2e4a;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    border: none; /* Remove default input border */
+    outline: none; /* Remove focus border */
+    font-size: inherit; /* Match list item font */
+}
   .folder-list li:hover {
     background: #3a3a5c; /* Hover background */
     transform: translateY(-4px); /* Pop-out effect */

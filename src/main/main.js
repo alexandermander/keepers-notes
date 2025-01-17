@@ -45,6 +45,7 @@ app.whenReady().then(() => {
 
 	ipcMain.on('set-log', (event, title) => {
 		console.log("file://", __dirname);
+		mainWindow.loadURL(NOTES_WINDOW_WEBPACK_ENTRY);
 	});
 
 	ipcMain.handle('get-folders', async (event) => {

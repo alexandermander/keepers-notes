@@ -1,24 +1,8 @@
 import './index.css';
+
 import { setupKeydownHandler } from './components/createNewFile';
+import addIcons from './util/add_icons';
 
-import { library, dom } from '@fortawesome/fontawesome-svg-core';
-
-const addIcons = (iconSets) => {
-	iconSets.forEach(set => {
-		const icons = Object.keys(set)
-			.filter(key => key.startsWith('fa'))
-			.map(key => set[key]);
-
-		library.add(...icons);
-	});
-	dom.watch();
-};
-
-import * as regularIcons from '@fortawesome/free-regular-svg-icons';
-import * as brandsIcons from '@fortawesome/free-brands-svg-icons';
-import * as solidIcons from '@fortawesome/free-solid-svg-icons';
-
-addIcons([regularIcons, brandsIcons, solidIcons]);
 
 console.log('👋 This message is being logged by "renderer.js", included via webpack');
 setupKeydownHandler();
@@ -29,32 +13,69 @@ async function getFolders() {
 	return folders
 }
 
-function createFiles(draggable) {
-	const files = [];
-	const centerX = parseFloat(draggable.getAttribute('x')) || 0;
-	const centerY = parseFloat(draggable.getAttribute('y')) || 0;
-	const spacing = 60;
-	const angles = [-15, 0, 15]; // Different angles for the files
+async function createFiles(draggable) {
+	const radius = 2200;
 
-	for (let i = 0; i < 3; i++) {
-		const yOffset = (i + 1) * spacing;
-		const rotationAngle = angles[i];
+	const width = Math.floor(Number(draggable.getAttribute("width")));
+	const height = Math.floor(Number(draggable.getAttribute("height")));
 
-		const file = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		file.setAttribute("class", `file-${draggable.id} render`);
-		file.setAttribute("width", "25");
-		file.setAttribute("height", "50");
-		file.setAttribute("x", centerX);
-		file.setAttribute("y", centerY + yOffset);
-		file.setAttribute("fill", "#3b82f6");
-		file.setAttribute("rx", "5");
+	const xc = Math.floor(Number(draggable.getAttribute("x")) + width / 2) - radius - 10;
+	const yc = Math.floor(Number(draggable.getAttribute("y")) + height / 2) + 80;
 
-		// Apply rotation transform
-		file.setAttribute("transform", `rotate(${rotationAngle}, ${centerX + 50}, ${centerY + yOffset + 25})`);
+	let angle = 0.0;
 
-		files.push(file);
+	for (let i = 0; i < 5; i++) {
+
+		const container = draggable.closest('svg');
+		const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+		console.log('angle', angle);
+
+		const pathFile = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+		const x = xc + radius * Math.cos(angle) - 25;
+		const y = yc + radius * Math.sin(angle) - 25;
+
+		pathFile.setAttribute("width", 100);
+		pathFile.setAttribute("height", 70);
+		pathFile.setAttribute("x", x);
+		pathFile.setAttribute("y", y);
+
+		// Get rotation angle
+		const tangent = Math.atan2(y - yc, x - xc);
+		const degree = tangent * (180 / Math.PI);
+		pathFile.setAttribute("transform", `rotate(${degree}, ${x}, ${y})`);
+
+		// Create a div container for icon & text
+		const div = document.createElement("div");
+		div.style.display = "flex";
+
+		div.style.width = "100px";
+		div.style.alignItems = "center";
+
+		// Icon
+		const icon = document.createElement("i");
+		icon.className = "render fa fa-solid fa-file";
+		icon.style.fontSize = "50px";
+
+		// File name
+		const p = document.createElement("p");
+
+		p.style.fontSize = "16px";
+		p.style.color = "white";
+		p.textContent = "file.txt";
+
+		div.appendChild(icon);
+		div.appendChild(p);
+		pathFile.appendChild(div);
+
+		pathFile.classList.add(`file-${draggable.id}`, "fade-in");
+		g.appendChild(pathFile);
+		angle += 0.035;
+
+		await new Promise((resolve) => setTimeout(resolve, 10));
+
+		container.appendChild(g);
 	}
-	return files;
 }
 
 
@@ -64,8 +85,10 @@ document.addEventListener('DOMContentLoaded', () => {
 	let isZooming = false, isDragging = false, isPanning = false;
 	let startX = 0, startY = 0;
 
+	getFolders()
 
 	const addIcons = (iconList) => {
+		let id = 0;
 		iconList.forEach((icon) => {
 			// 1) Create a <g> for positioning+rotation
 			const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -75,7 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
 			const randomY = Math.random() * 800;
 
 			// Generate random size
-			const randomSize = Math.floor(Math.random() * 50) + 50;
+			const randomSize = 80
+
+			console.log('randomSize', randomSize);
 
 			// 2) Translate <g> to the desired "world" position
 			//    We’ll rotate around this point later
@@ -84,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			// 3) Create the <foreignObject> *centered* on (0,0) of the <g>
 			const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
 			// Move its top-left corner so that (0,0) is the center
+			foreignObject.setAttribute("id", id++);
 			foreignObject.setAttribute("x", randomX);
 			foreignObject.setAttribute("y", randomY);
 			foreignObject.setAttribute("width", randomSize);
@@ -117,33 +143,28 @@ document.addEventListener('DOMContentLoaded', () => {
 				draggable.classList.remove('icon-twist');
 
 				// Remove the files
-				const files = container.querySelectorAll(`.file-${draggable.id}`);
-				files.forEach(file => file.remove());
+				let files = container.querySelectorAll(`.file-${draggable.id}`);
+				files = Array.from(files).reverse();
+
+				files.forEach((file, index) => {
+					setTimeout(() => {
+						file.classList.add('fade-out');
+					}, index * 20); // Delay increases per file
+				});
 				draggable.dataset.open = "false";
 
 			} else {
 				// Open the icon, add the twist
-				draggable.classList.add('icon-twist');
+
 				draggable.dataset.open = "true";
+				draggable.classList.add('icon-twist');
+				const files = createFiles(draggable);
 
-				// Create & append files
-				//const files = createFiles(draggable);
-				//files.forEach((file, i) => {
-				//	// Add the fade in class
-				//	file.classList.add('file-fade-in');
-
-				//	// OPTIONAL: Stagger the animation start
-				//	// This creates a small delay for each subsequent file
-				//	file.style.animationDelay = `${i * 0.1}s`;
-
-				//	container.appendChild(file);
-				//});
-				//draggable.dataset.open = "true";
 			}
 		});
 
 		draggable.addEventListener('mousedown', (event) => {
-			if (isZooming || isPanning) {
+			if (isZooming || isPanning || draggable.dataset.open === "true") {
 				return; // Exit early to avoid interference
 			}
 
@@ -189,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			document.addEventListener('mouseup', onMouseUp);
 		});
 
-		// i want a more dark cursor when the mouse is over the svg element
+		//draggable.dataset.open
 		draggable.style.cursor = "move";
 	});
 
