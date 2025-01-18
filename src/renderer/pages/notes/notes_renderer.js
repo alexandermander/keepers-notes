@@ -1,23 +1,45 @@
 const { marked } = require('marked');
+import { createIconPickerPopup } from './componstes/iconPickerPopup';
 
-//import addIcons from "../../util/add_icons"; // this add the icons to the library
-const { addIcons } = require('../../util/add_icons');
-
-addIcons();
+const { iconpopup, showPopup, hidePopup } = createIconPickerPopup();
 
 const folderList = document.getElementById('folder-list');
 const editor = document.querySelector('.editor');
 let saveName = null;
 let markedFolder = null;
+let markedIcon = null;
 
+// Keep track of the currently selected or dragged image
 let selectedImage = null;
+let draggedImage = null;
+let offsetX = 0;
+let offsetY = 0;
 
-//function getFolders() {
+
+iconpopup.addEventListener('iconSelected', (event) => {
+	const { iconName, className } = event.detail;
+	console.log('User picked icon:', iconName, className);
+
+	markedIcon = className;
+	saveInFolder();
+
+	hidePopup();
+});
+
 async function getFolders() {
 	const folders = await window.windowAPI.getFolders();
 	console.log('folders', folders);
-	return folders
+
+	return folders.folders;
 }
+
+
+function pickLogo() {
+	// when creating a new folder the user can pick a logo
+	//
+	console.log('pickLogo');
+}
+
 
 function saveInFolder() {
 
@@ -30,8 +52,10 @@ function saveInFolder() {
 		saveName,
 		noteDataString,
 		folder: markedFolder,
+		icon: markedIcon,
 	};
 
+	console.log('notesAndFolder', notesAndFolder);
 	window.windowAPI.saveInFolder(notesAndFolder);
 }
 
@@ -254,14 +278,24 @@ document.addEventListener('keydown', (event) => {
 		// Show the folder popu
 		const folderPopup = document.getElementById('folder-popup');
 
-
 		// Get the list of folders
 		getFolders().then((folders) => {
-
 			folderList.innerHTML = '';
 			folders.forEach((folder) => {
 				const li = document.createElement('li');
-				li.textContent = folder;
+
+				// Create a span for the folder name
+				const folderName = document.createElement('span');
+				folderName.textContent = folder.name;
+
+				// Create an icon for the right side
+				const icon = document.createElement('i');
+				icon.className = folder.icon;
+				icon.style.marginLeft = 'auto'; // Push icon to the right
+
+				// Append both elements inside li
+				li.appendChild(folderName);
+				li.appendChild(icon);
 
 				li.setAttribute('tabindex', '0');
 
@@ -289,6 +323,9 @@ document.addEventListener('keydown', (event) => {
 
 			input.addEventListener('keydown', (event) => {
 				if (event.key === 'Enter' && input.value.trim() !== '') {
+
+					showPopup();
+
 					const li = document.createElement('li');
 					li.textContent = input.value;
 
@@ -323,10 +360,9 @@ document.addEventListener('keydown', (event) => {
 			// Add 'selected' class to the selected item
 			item.classList.add('selected');
 
-			markedFolder = folder;
-			saveInFolder();
+			markedFolder = folder.name;
+			markedIcon = folder.icon;
 
-			console.log(`Folder selected: ${folder}`);
 			folderPopup.classList.add('hidden');
 		}
 	}
@@ -339,5 +375,4 @@ document.addEventListener('keydown', (event) => {
 		folderPopup.classList.add('hidden');
 	}
 });
-
 

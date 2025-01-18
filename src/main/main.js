@@ -49,7 +49,8 @@ app.whenReady().then(() => {
 	});
 
 	ipcMain.handle('get-folders', async (event) => {
-		const folders = getFolders();
+		const folders = getFolderConfig();
+		console.log('folders:', folders);
 		return folders;
 	});
 
@@ -82,20 +83,91 @@ function saveInTemp(note) {
 
 }
 
+
+function getFolderConfig() {
+	const configFile = path.join(app.getPath('documents'), 'keepersNotes', 'config.json');
+
+	// Ensure the directory exists
+	const configDir = path.dirname(configFile);
+	if (!fs.existsSync(configDir)) {
+		fs.mkdirSync(configDir, { recursive: true });
+	}
+
+	let config = { folders: [] }; // Default config
+
+	if (fs.existsSync(configFile)) {
+		try {
+			const fileContent = fs.readFileSync(configFile, 'utf8');
+			config = JSON.parse(fileContent); // Try to parse the existing file
+		} catch (error) {
+			console.error("Error parsing config.json:", error.message);
+			console.error("Resetting config.json to a valid state...");
+			fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8'); // Reset file
+		}
+	} else {
+		fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
+	}
+
+	console.log('configFile:', configFile);
+
+	const folders = getFolders(); // Ensure this function exists and returns an array
+
+	if (!Array.isArray(config.folders)) {
+		config.folders = [];
+	}
+
+	folders.forEach(folder => {
+		if (!config.folders.find(f => f.name === folder)) {
+			config.folders.push({
+				name: folder,
+				icon: 'far fa-folder',
+			});
+		}
+	});
+
+	console.log('yoo det works:');
+
+	// Save updated config back to file
+	fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
+
+	return config; // Already an object, no need to JSON.parse again
+}
+
+function updateConfig(folderName, icon) {
+	const configFile = path.join(app.getPath('documents'), 'keepersNotes', 'config.json');
+	const fileContent = fs.readFileSync(configFile, 'utf8');
+	const config = JSON.parse(fileContent);
+
+	const folderIndex = config.folders.findIndex(f => f.name === folderName);
+	if (folderIndex === -1) {
+		console.error('Folder not found:', folderName);
+		return;
+	}
+	else {
+		config.folders[folderIndex].icon = icon;
+	}
+
+	fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
+}
+
 function getFolders() {
 	//const filePath = path.join(tempDir, 'keepersNotes');
 	const filePath = path.join(app.getPath('documents'), 'keepersNotes');
 	if (!fs.existsSync(filePath)) {
 		fs.mkdirSync(filePath, { recursive: true });
 	}
+	// get only folders
+	const folders = fs.readdirSync(filePath, { withFileTypes: true })
+		.filter(dirent => dirent.isDirectory())
+		.map(dirent => dirent.name);
 
-	const folders = fs.readdirSync(filePath);
 	console.log('folders:', folders);
 	return folders;
 }
 
 function saveInFolder(notesAndFolder) {
-	const { saveName, noteDataString, folder } = notesAndFolder;
+	const { saveName, noteDataString, folder, icon } = notesAndFolder;
+	updateConfig(folder, icon);
 	const folderPath = path.join(app.getPath('documents'), 'keepersNotes', folder);
 	const filePath = path.join(folderPath, `${saveName}.kep`);
 
