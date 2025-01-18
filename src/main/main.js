@@ -38,6 +38,11 @@ app.whenReady().then(() => {
 	});
 
 
+	ipcMain.handle('get-files', async (event, folder) => {
+		const files = getFiles(folder);
+		return files;
+	});
+
 	//save-in-folder', folder)
 	ipcMain.on('save-in-folder', (event, folder) => {
 		saveInFolder(folder);
@@ -164,6 +169,21 @@ function getFolders() {
 	console.log('folders:', folders);
 	return folders;
 }
+
+function getFiles(folder) {
+	const folderPath = path.join(app.getPath('documents'), 'keepersNotes', folder);
+	if (!fs.existsSync(folderPath)) {
+		// retunr empty array
+		return [];
+	}
+	const files = fs.readdirSync(folderPath, { withFileTypes: true })
+		.filter(dirent => dirent.isFile())
+		.map(dirent => dirent.name);
+
+	console.log('files:', files);
+	return files;
+}
+
 
 function saveInFolder(notesAndFolder) {
 	const { saveName, noteDataString, folder, icon } = notesAndFolder;

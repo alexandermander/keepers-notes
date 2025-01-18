@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 contextBridge.exposeInMainWorld('windowAPI', {
 	saveNote: (note) => ipcRenderer.send("save-temp-note", note),
 	getFolders: () => ipcRenderer.invoke('get-folders'),
+	getFiles: (folder) => ipcRenderer.invoke('get-files', folder),
 	saveInFolder: (folder) => ipcRenderer.send('save-in-folder', folder)
 })

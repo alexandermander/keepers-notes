@@ -34,13 +34,6 @@ async function getFolders() {
 }
 
 
-function pickLogo() {
-	// when creating a new folder the user can pick a logo
-	//
-	console.log('pickLogo');
-}
-
-
 function saveInFolder() {
 
 	const noteDataString = getTextAndImages();
