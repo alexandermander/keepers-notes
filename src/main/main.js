@@ -37,6 +37,25 @@ app.whenReady().then(() => {
 		saveInTemp(note);
 	});
 
+	ipcMain.on('open-file', async (event, file) => {
+		if (file) {
+			mainWindow.loadURL(NOTES_WINDOW_WEBPACK_ENTRY + '?file=' + file);
+		}
+		else {
+			mainWindow.loadURL(NOTES_WINDOW_WEBPACK_ENTRY);
+		}
+	});
+
+	/// openMainWindow
+	ipcMain.on('open-main-window', async () => {
+		mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+	});
+
+	ipcMain.handle('get-file-data', async (event, notes) => {
+		console.log('notes:', notes);
+		const files = openFile(notes);
+		return files;
+	});
 
 	ipcMain.handle('get-files', async (event, folder) => {
 		const files = getFiles(folder);
@@ -185,10 +204,30 @@ function getFiles(folder) {
 }
 
 
+function openFile(file) {
+	const folderPath = path.join(app.getPath('documents'), 'keepersNotes');
+	const filePath = path.join(folderPath, file);
+	const fileContent = fs.readFileSync(filePath, 'utf8');
+	if (fileContent) {
+		return fileContent;
+	}
+	else {
+		return '';
+	}
+}
+
 function saveInFolder(notesAndFolder) {
 	const { saveName, noteDataString, folder, icon } = notesAndFolder;
-	updateConfig(folder, icon);
+	// if icons os null the dont update the config file
 	const folderPath = path.join(app.getPath('documents'), 'keepersNotes', folder);
+	// see if exists if not create it
+	if (!fs.existsSync) {
+		fs.mkdirSync(folderPath, { recursive: true });
+	}
+	if (icon) {
+		updateConfig(folder, icon);
+	}
+
 	const filePath = path.join(folderPath, `${saveName}.kep`);
 
 	if (!fs.existsSync(folderPath)) {

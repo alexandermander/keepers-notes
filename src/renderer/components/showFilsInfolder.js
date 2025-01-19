@@ -14,7 +14,7 @@ async function showFilesInFolder(draggable) {
 	const width = Math.floor(Number(draggable.getAttribute("width")));
 	const height = Math.floor(Number(draggable.getAttribute("height")));
 
-	const xc = Math.floor(Number(draggable.getAttribute("x")) + width / 2) - radius - 10;
+	const xc = Math.floor(Number(draggable.getAttribute("x")) + width / 2) - radius + 5;
 	const yc = Math.floor(Number(draggable.getAttribute("y")) + height / 2) + 80;
 
 	let angle = 0.0;
@@ -23,13 +23,14 @@ async function showFilesInFolder(draggable) {
 		const container = draggable.closest('svg');
 		const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
+		//add style on the g element
+		// like width and height
+
 		console.log('angle', angle);
 
 		const pathFile = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
 		const x = xc + radius * Math.cos(angle) - 25;
 		const y = yc + radius * Math.sin(angle) - 25;
-
-
 		// make the with so it fits the text
 		pathFile.setAttribute("width", 100);
 		pathFile.setAttribute("height", 70);
@@ -43,13 +44,13 @@ async function showFilesInFolder(draggable) {
 
 		const div = document.createElement("div");
 		div.style.display = "flex";
-		div.style.width = "auto"; // Adjust width to accommodate text
+		div.style.width = "auto";
 		div.style.alignItems = "center";
 		div.style.flexWrap = "nowrap"; // Prevent wrapping
 
 		// Icon
 		const icon = document.createElement("i");
-		icon.className = "render fa fa-solid fa-file";
+		icon.className = "render fa fa-solid fa-file file-3d";
 		icon.style.fontSize = "50px";
 
 		// File name
@@ -73,6 +74,8 @@ async function showFilesInFolder(draggable) {
 		await new Promise((resolve) => setTimeout(resolve, 10));
 
 		container.appendChild(g);
+
+		// add a lissener to the file so i can open it
 	}
 
 	// make so i can dobbel click on each file and open it
@@ -80,6 +83,7 @@ async function showFilesInFolder(draggable) {
 	getFiles.forEach((file) => {
 		file.addEventListener('dblclick', () => {
 			console.log(file.dataset.fileName);
+			window.windowAPI.openFile(file.dataset.fileName);
 		});
 	});
 

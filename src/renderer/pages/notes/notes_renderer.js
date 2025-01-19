@@ -1,10 +1,15 @@
 const { marked } = require('marked');
 import { createIconPickerPopup } from './componstes/iconPickerPopup';
 
+// get parm from the url
+
+
 const { iconpopup, showPopup, hidePopup } = createIconPickerPopup();
 
 const folderList = document.getElementById('folder-list');
 const editor = document.querySelector('.editor');
+
+
 let saveName = null;
 let markedFolder = null;
 let markedIcon = null;
@@ -15,24 +20,64 @@ let draggedImage = null;
 let offsetX = 0;
 let offsetY = 0;
 
+let createId = 0;
+
+const urlParams = new URLSearchParams(window.location.search);
+const filePath = urlParams.get('file');
+
+if (filePath) {
+	console.log('Opening file:', filePath);
+
+	// Code/code of sp.kep " so set the sanme and the folder
+
+	const lastSlashIndex = filePath.lastIndexOf('/');
+	const lastDotIndex = filePath.lastIndexOf('.');
+	const folder = filePath.substring(0, lastSlashIndex);
+	const name = filePath.substring(lastSlashIndex + 1, lastDotIndex);
+
+	saveName = name;
+	markedFolder = folder;
+
+	window.windowAPI.getFileData(filePath).then((data) => {
+
+		const { note, images } = JSON.parse(data);
+		console.log('note:', images);
+		editor.innerText = note;
+
+		// img src with x and y position
+
+		images.forEach((image) => {
+			const img = document.createElement('img');
+			img.src = image.src;
+			img.style.position = 'absolute';
+			img.style.left = `${image.x}px`;
+			img.style.top = `${image.y}px`;
+
+			editor.appendChild(img);
+		});
+
+
+	});
+}
 
 iconpopup.addEventListener('iconSelected', (event) => {
 	const { iconName, className } = event.detail;
 	console.log('User picked icon:', iconName, className);
 
 	markedIcon = className;
-	saveInFolder();
+
+	// get the icon element that hvae the id 0
+	const icon = document.getElementById(0);
+	console.log('icon', icon);
 
 	hidePopup();
 });
 
 async function getFolders() {
 	const folders = await window.windowAPI.getFolders();
-	console.log('folders', folders);
 
 	return folders.folders;
 }
-
 
 function saveInFolder() {
 
@@ -75,10 +120,10 @@ function getTextAndImages() {
 		images: imageDetails,
 	};
 
-	console.log('noteData', JSON.stringify(noteData));
+	//	console.log('noteData', JSON.stringify(noteData));
 	const noteDataString = JSON.stringify(noteData);
 
-	console.log('noteData', noteData);
+	//	console.log('noteData', noteData);
 	return noteDataString;
 }
 
@@ -214,6 +259,10 @@ editor.addEventListener('mouseover', (event) => {
 				if (draggedImage) {
 					draggedImage.style.cursor = 'grab';
 					draggedImage = null;
+					// savein folder if imae is set
+					if (saveName && markedFolder) {
+						saveInFolder();
+					}
 				}
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
@@ -245,9 +294,13 @@ document.addEventListener('keydown', (event) => {
 		const folderPopup = document.getElementById('folder-popup');
 		folderPopup.classList.remove('hidden');
 	}
-
 });
 document.addEventListener('keydown', (event) => {
+	// ctl q for onten the main window
+	if (event.key === 'q' && event.ctrlKey) {
+		window.windowAPI.openMainWindow();
+	}
+
 	if (event.key === 'Enter') {
 		const popup = document.getElementById('search-popup');
 
@@ -263,7 +316,6 @@ document.addEventListener('keydown', (event) => {
 		}
 
 		saveName = value;
-		console.log(`Saving note as: ${value}`);
 
 		// Hide the search popup
 		popup.classList.add('hidden');
@@ -318,9 +370,19 @@ document.addEventListener('keydown', (event) => {
 				if (event.key === 'Enter' && input.value.trim() !== '') {
 
 					showPopup();
-
 					const li = document.createElement('li');
+
+					//set the id of the folder
 					li.textContent = input.value;
+
+					const icon = document.createElement('i');
+					/// now pick the icon to set the icon
+					//and wiat until the user pick the icon
+
+
+
+					icon.style.marginLeft = 'auto'; // Push icon to the right
+					li.appendChild(icon);
 
 					li.setAttribute('tabindex', '0');
 
@@ -350,7 +412,6 @@ document.addEventListener('keydown', (event) => {
 			// Remove 'selected' class from all items
 			folderList.querySelectorAll('.selected').forEach((li) => li.classList.remove('selected'));
 
-			// Add 'selected' class to the selected item
 			item.classList.add('selected');
 
 			markedFolder = folder.name;

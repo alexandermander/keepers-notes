@@ -4,6 +4,7 @@ import { setupKeydownHandler } from './components/createNewFile';
 import { showFilesInFolder } from './components/showFilsInfolder';
 import addIcons from './util/add_icons';
 
+
 addIcons();
 setupKeydownHandler();
 
@@ -12,7 +13,6 @@ const svg = document.getElementById('zoomable-svg');
 const viewBox = { x: 0, y: 0, width: svg.viewBox.baseVal.width, height: svg.viewBox.baseVal.height };
 let isZooming = false, isDragging = false, isPanning = false;
 let startX = 0, startY = 0;
-
 
 async function getFolders() {
 	const folders = await window.windowAPI.getFolders();
@@ -51,13 +51,14 @@ function addFolderIcon(folderswithIcons) {
 		foreignObject.innerHTML = `<i class="render ${folder.icon}" 
 		style = "font-size: ${sizeOfIcon}px;" ></i > `;
 
-
 		// TODO:  make files name show up in svg
 
 		g.appendChild(foreignObject);
 		svg.appendChild(g);
 	});
 }
+
+
 
 let folders = [];
 
@@ -66,6 +67,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 	addFolderIcon(folders);
 
 	const draggables = document.querySelectorAll('.draggable');// is a svg element with class draggable
+
+
+
+
+
 	draggables.forEach((draggable) => {
 
 		draggable.addEventListener('dblclick', () => {
@@ -86,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 						setTimeout(() => {
 							file.remove();
 						}, 500);
-					}, index * 20); // Delay increases per file
+					}, index * 50); // Delay increases per file
 				});
 
 				draggable.dataset.open = "false";
@@ -154,6 +160,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 	document.addEventListener('keydown', (event) => {
+
+		// if ctrl + q open notes
+		if (event.key === 'q' && event.ctrlKey) {
+			const file = null;
+			window.windowAPI.openFile(file);
+		}
+
 		const popup = document.getElementById('search-popup');
 
 		if (popup && !popup.classList.contains('hidden') && event.key === ' ') {
@@ -259,4 +272,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 	});
 
 });
+
 

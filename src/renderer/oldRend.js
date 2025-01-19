@@ -1,13 +1,19 @@
 import './index.css';
 
 import { setupKeydownHandler } from './components/createNewFile';
+import { showFilesInFolder } from './components/showFilsInfolder';
 import addIcons from './util/add_icons';
 
+
 addIcons();
-
-
-console.log('👋 This message is being logged by "renderer.js", included via webpack');
 setupKeydownHandler();
+
+
+const svg = document.getElementById('zoomable-svg');
+const viewBox = { x: 0, y: 0, width: svg.viewBox.baseVal.width, height: svg.viewBox.baseVal.height };
+let isZooming = false, isDragging = false, isPanning = false;
+let startX = 0, startY = 0;
+
 
 async function getFolders() {
 	const folders = await window.windowAPI.getFolders();
@@ -15,125 +21,49 @@ async function getFolders() {
 	return folders.folders;
 }
 
-async function createFiles(draggable) {
-	const radius = 2200;
 
-	const width = Math.floor(Number(draggable.getAttribute("width")));
-	const height = Math.floor(Number(draggable.getAttribute("height")));
-
-	const xc = Math.floor(Number(draggable.getAttribute("x")) + width / 2) - radius - 10;
-	const yc = Math.floor(Number(draggable.getAttribute("y")) + height / 2) + 80;
-
-	let angle = 0.0;
-
-	for (let i = 0; i < 5; i++) {
-
-		const container = draggable.closest('svg');
+function addFolderIcon(folderswithIcons) {
+	let id = 0;
+	folderswithIcons.forEach((folder) => {
 		const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-		console.log('angle', angle);
+		const randomX = Math.random() * 800;
+		const randomY = Math.random() * 800;
 
-		const pathFile = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-		const x = xc + radius * Math.cos(angle) - 25;
-		const y = yc + radius * Math.sin(angle) - 25;
+		const sizeOfIcon = 80
 
-		pathFile.setAttribute("width", 100);
-		pathFile.setAttribute("height", 70);
-		pathFile.setAttribute("x", x);
-		pathFile.setAttribute("y", y);
+		g.setAttribute("transform", `translate(${0}, ${0})`);
 
-		// Get rotation angle
-		const tangent = Math.atan2(y - yc, x - xc);
-		const degree = tangent * (180 / Math.PI);
-		pathFile.setAttribute("transform", `rotate(${degree}, ${x}, ${y})`);
-
-		// Create a div container for icon & text
+		const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
 		const div = document.createElement("div");
-		div.style.display = "flex";
-
-		div.style.width = "100px";
-		div.style.alignItems = "center";
-
-		// Icon
 		const icon = document.createElement("i");
-		icon.className = "render fa fa-solid fa-file";
-		icon.style.fontSize = "50px";
 
-		// File name
-		const p = document.createElement("p");
+		foreignObject.setAttribute("id", id++);
+		foreignObject.setAttribute("x", randomX);
+		foreignObject.setAttribute("y", randomY);
+		foreignObject.setAttribute("width", sizeOfIcon);
+		foreignObject.setAttribute("height", sizeOfIcon);
 
-		p.style.fontSize = "16px";
-		p.style.color = "white";
-		p.textContent = "file.txt";
+		foreignObject.classList.add('draggable');
 
-		div.appendChild(icon);
-		div.appendChild(p);
-		pathFile.appendChild(div);
+		foreignObject.dataset.open = "false";
+		foreignObject.dataset.folderName = folder.name;
 
-		pathFile.classList.add(`file-${draggable.id}`, "fade-in");
-		g.appendChild(pathFile);
-		angle += 0.035;
+		foreignObject.innerHTML = `<i class="render ${folder.icon}" 
+		style = "font-size: ${sizeOfIcon}px;" ></i > `;
 
-		await new Promise((resolve) => setTimeout(resolve, 10));
+		// TODO:  make files name show up in svg
 
-		container.appendChild(g);
-	}
+		g.appendChild(foreignObject);
+		svg.appendChild(g);
+	});
 }
 
+let folders = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-	const svg = document.getElementById('zoomable-svg');
-	const viewBox = { x: 0, y: 0, width: svg.viewBox.baseVal.width, height: svg.viewBox.baseVal.height };
-	let isZooming = false, isDragging = false, isPanning = false;
-	let startX = 0, startY = 0;
-
-
-	const addIcons = (iconList) => {
-		let id = 0;
-		iconList.forEach((icon) => {
-			const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-
-			const randomX = Math.random() * 800;
-			const randomY = Math.random() * 800;
-
-			const sizeOfIcon = 80
-
-			g.setAttribute("transform", `translate(${0}, ${0})`);
-
-			const foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
-
-			foreignObject.setAttribute("id", id++);
-			foreignObject.setAttribute("x", randomX);
-			foreignObject.setAttribute("y", randomY);
-			foreignObject.setAttribute("width", sizeOfIcon);
-			foreignObject.setAttribute("height", sizeOfIcon);
-
-			foreignObject.classList.add('draggable');
-
-			foreignObject.innerHTML = `<i class="render ${icon}" 
-                                  style="font-size: ${sizeOfIcon}px;"></i>`;
-
-			console.log('foreignObject', foreignObject.innerHTML);
-
-			g.appendChild(foreignObject);
-			svg.appendChild(g);
-		});
-	};
-
-
-	let iconList = [];
-	getFolders().then((folders) => {
-		folders.forEach((folder) => {
-			// convert to stirng:
-			iconList.push(folder.icon.toString());
-		});
-
-		console.log('iconList', iconList);
-
-		addIcons(iconList);
-	});
-
-	addIcons(['fab fa-signal-messenger', 'fas fa-fire-flame-curved', 'fab fa-docker', 'fas fa-language', 'fas fa-dice']);
+document.addEventListener('DOMContentLoaded', async () => {
+	folders = await getFolders();
+	addFolderIcon(folders);
 
 	const draggables = document.querySelectorAll('.draggable');// is a svg element with class draggable
 	draggables.forEach((draggable) => {
@@ -147,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				draggable.classList.remove('icon-twist');
 
 				// Remove the files
-				let files = container.querySelectorAll(`.file-${draggable.id}`);
+				let files = container.querySelectorAll(`.file-${draggable.id} `);
 				files = Array.from(files).reverse();
 
 				files.forEach((file, index) => {
@@ -166,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				draggable.dataset.open = "true";
 				draggable.classList.add('icon-twist');
-				const files = createFiles(draggable);
+				const files = showFilesInFolder(draggable);
 
 			}
 		});
@@ -303,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			// Apply updated viewBox
 			svg.setAttribute(
 				'viewBox',
-				`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+				`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height} `
 			);
 
 			// Update start positions
@@ -327,4 +257,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (isPanning) svg.style.cursor = 'grab'; // Reset to grab cursor
 		}
 	});
+
 });
+

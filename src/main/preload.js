@@ -11,5 +11,8 @@ contextBridge.exposeInMainWorld('windowAPI', {
 	saveNote: (note) => ipcRenderer.send("save-temp-note", note),
 	getFolders: () => ipcRenderer.invoke('get-folders'),
 	getFiles: (folder) => ipcRenderer.invoke('get-files', folder),
-	saveInFolder: (folder) => ipcRenderer.send('save-in-folder', folder)
+	saveInFolder: (folder) => ipcRenderer.send('save-in-folder', folder),
+	openFile: (file) => ipcRenderer.send('open-file', file),
+	getFileData: (notes) => ipcRenderer.invoke('get-file-data', notes),
+	openMainWindow: () => ipcRenderer.send('open-main-window')
 })
