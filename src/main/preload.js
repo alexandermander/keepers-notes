@@ -14,5 +14,6 @@ contextBridge.exposeInMainWorld('windowAPI', {
 	saveInFolder: (folder) => ipcRenderer.send('save-in-folder', folder),
 	openFile: (file) => ipcRenderer.send('open-file', file),
 	getFileData: (notes) => ipcRenderer.invoke('get-file-data', notes),
-	openMainWindow: () => ipcRenderer.send('open-main-window')
+	openMainWindow: () => ipcRenderer.send('open-main-window'),
+	saveIconPos: (folderAndPos) => ipcRenderer.send('save-icon-pos', folderAndPos)
 })

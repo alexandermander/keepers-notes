@@ -1,10 +1,6 @@
 const { marked } = require('marked');
-import { createIconPickerPopup } from './componstes/iconPickerPopup';
+import { waitForIconSelection } from './componstes/iconPickerPopup';
 
-// get parm from the url
-
-
-const { iconpopup, showPopup, hidePopup } = createIconPickerPopup();
 
 const folderList = document.getElementById('folder-list');
 const editor = document.querySelector('.editor');
@@ -13,6 +9,7 @@ const editor = document.querySelector('.editor');
 let saveName = null;
 let markedFolder = null;
 let markedIcon = null;
+const listOfnewCreatedFolders = [];
 
 // Keep track of the currently selected or dragged image
 let selectedImage = null;
@@ -42,45 +39,34 @@ if (filePath) {
 
 		const { note, images } = JSON.parse(data);
 		console.log('note:', images);
-		editor.innerText = note;
+		editor.innerHTML = note;
 
 		// img src with x and y position
 
-		images.forEach((image) => {
-			const img = document.createElement('img');
-			img.src = image.src;
-			img.style.position = 'absolute';
-			img.style.left = `${image.x}px`;
-			img.style.top = `${image.y}px`;
+		//images.forEach((image) => {
+		//	const img = document.createElement('img');
+		//	img.src = image.src;
+		//	img.style.position = 'absolute';
+		//	img.style.left = `${image.x}px`;
+		//	img.style.top = `${image.y}px`;
 
-			editor.appendChild(img);
-		});
+		//	editor.appendChild(img);
+		//});
 
 
 	});
 }
 
-iconpopup.addEventListener('iconSelected', (event) => {
-	const { iconName, className } = event.detail;
-	console.log('User picked icon:', iconName, className);
-
-	markedIcon = className;
-
-	// get the icon element that hvae the id 0
-	const icon = document.getElementById(0);
-	console.log('icon', icon);
-
-	hidePopup();
-});
-
 async function getFolders() {
 	const folders = await window.windowAPI.getFolders();
+	// set the list of folders
+	listOfnewCreatedFolders.push(...folders.folders);
+	console.log('folders', folders);
 
 	return folders.folders;
 }
 
 function saveInFolder() {
-
 	const noteDataString = getTextAndImages();
 	if (!saveName) {
 		console.error('No note name provided');
@@ -99,25 +85,17 @@ function saveInFolder() {
 
 function getTextAndImages() {
 	const tempText = document.getElementsByClassName('editor');
-	const text = Array.from(tempText).map((element) => element.innerText);
-	const note = text.join('\n');
+	// get the hole element of the editor html
+	const note = tempText[0].innerHTML;
+	console.log('note', note);
 
 	// check if any image is there in the editor
 	const images = document.querySelectorAll('img');
 
 	// get the image and the x and y position
-	const imageDetails = Array.from(images).map((image) => {
-		const rect = image.getBoundingClientRect();
-		return {
-			src: image.src,
-			x: rect.x,
-			y: rect.y,
-		};
-	});
 
 	const noteData = {
 		note,
-		images: imageDetails,
 	};
 
 	//	console.log('noteData', JSON.stringify(noteData));
@@ -129,10 +107,40 @@ function getTextAndImages() {
 
 function saveinTempNote() {
 	const noteDataString = getTextAndImages();
+	console.log('noteDataString', noteDataString);
 	window.windowAPI.saveNote(noteDataString);
 }
 
 editor.addEventListener('keydown', (event) => {
+	// if f1
+	if (event.key === 'F1') {
+
+		// there is a senario where i cant excit a pated html element so i need to create a new like
+		// create a new line
+		const newLine = document.createElement('div');
+		newLine.className = 'tempText'; // Add a class if needed
+		newLine.innerHTML = '<br>'; // Create an empty line
+
+		// Append the new line at the correct position in the editor
+		const editor = document.getElementsByClassName('editor')[0];
+		const lastChild = editor.lastChild;
+
+		if (lastChild && lastChild.nodeName === 'DIV' && lastChild.innerHTML === '<br>') {
+			editor.appendChild(newLine);
+		}
+		else {
+			editor.appendChild(newLine);
+
+			// focus the new line tempText
+			const range = document.createRange();
+			range.selectNodeContents(newLine);
+			range.collapse(true); // Position the caret at the beginning of the new line
+			const selection = window.getSelection();
+			selection.removeAllRanges();
+			selection.addRange(range);
+		}
+	}
+
 	if (event.key === 'Enter') {
 
 		//const editor = document.getElementsByClassName('editor')[0];
@@ -204,7 +212,7 @@ editor.addEventListener('wheel', (event) => {
 
 
 // if if hte user press on the editor make the image selected be false and remove the selected-image class
-editor.addEventListener('mousedown', (event) => {
+editor.addEventListener('mousedown', async (event) => {
 
 	// check out side the image
 	if (event.target.nodeName !== 'IMG') {
@@ -359,45 +367,61 @@ document.addEventListener('keydown', (event) => {
 		});
 
 		const createFolderBtn = document.getElementById('create-folder');
-		createFolderBtn.onclick = () => {
+		createFolderBtn.onclick = async () => {
 
 			const input = document.createElement('input');
 			input.setAttribute('tabindex', '0');
 			folderList.appendChild(input);
 			input.focus();
 
-			input.addEventListener('keydown', (event) => {
+			input.addEventListener('keydown', async (event) => {
 				if (event.key === 'Enter' && input.value.trim() !== '') {
 
-					showPopup();
+					// se if the folder is already created
+					const folderExist = listOfnewCreatedFolders.find((folder) => folder.name === input.value);
+					if (folderExist) {
+						/// add pend a stle to the input field called shake
+						input.classList.add('shake');
+						input.value = '';
+						// remove the class after 1 sec
+						setTimeout(() => {
+							input.classList.remove('shake');
+						}, 1000);
+
+						return;
+					}
+
+					const { iconName, className } = await waitForIconSelection();
+					listOfnewCreatedFolders.push({ name: input.value, icon: className });
+
+					console.log('User picked icon:', iconName, className);
 					const li = document.createElement('li');
 
 					//set the id of the folder
 					li.textContent = input.value;
 
 					const icon = document.createElement('i');
-					/// now pick the icon to set the icon
-					//and wiat until the user pick the icon
-
-
-
+					icon.className = className;
 					icon.style.marginLeft = 'auto'; // Push icon to the right
 					li.appendChild(icon);
+
+					const folder = { name: input.value, icon: className };
 
 					li.setAttribute('tabindex', '0');
 
 					li.addEventListener('click', () => {
-						selectFolder(li, input.value);
+						selectFolder(li, folder);
 					});
 
 					li.addEventListener('keydown', (event) => {
 						if (event.key === 'Enter') {
-							selectFolder(li, input.value);
+							selectFolder(li, folder);
 						}
 					});
 
 					folderList.replaceChild(li, input);
 				}
+
 			});
 
 			folderList.scrollTop = folderList.scrollHeight;

@@ -38,8 +38,8 @@ function addFolderIcon(folderswithIcons) {
 		const icon = document.createElement("i");
 
 		foreignObject.setAttribute("id", id++);
-		foreignObject.setAttribute("x", randomX);
-		foreignObject.setAttribute("y", randomY);
+		foreignObject.setAttribute("x", folder.x);
+		foreignObject.setAttribute("y", folder.y);
 		foreignObject.setAttribute("width", sizeOfIcon);
 		foreignObject.setAttribute("height", sizeOfIcon);
 
@@ -67,9 +67,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 	addFolderIcon(folders);
 
 	const draggables = document.querySelectorAll('.draggable');// is a svg element with class draggable
-
-
-
 
 
 	draggables.forEach((draggable) => {
@@ -112,6 +109,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 				return; // Exit early to avoid interference
 			}
 
+
+			let xPos = null;
+			let yPos = null;
+
 			draggable.style.cursor = 'grabbing';
 
 			let shiftX = event.clientX - draggable.getBoundingClientRect().left;
@@ -138,12 +139,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 				}
 
 				// Update the position of the draggable element
+
+				xPos = newX;
+				yPos = newY;
 				draggable.setAttribute('x', newX);
 				draggable.setAttribute('y', newY);
 			};
 
 			// Remove event listeners when the mouse is released
 			const onMouseUp = () => {
+
+				const pos = { x: xPos, y: yPos, folderName: draggable.dataset.folderName };
+				if (pos.x && pos.y) {
+					window.windowAPI.saveIconPos(pos);
+				}
 				draggable.style.cursor = 'move';
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);

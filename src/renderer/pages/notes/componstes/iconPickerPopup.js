@@ -37,7 +37,7 @@ export function getAllIconClassNames() {
 	return shuffledIcons;
 }
 
-export function createIconPickerPopup() {
+function createIconPickerPopup() {
 	const iconpopup = document.createElement('div');
 	iconpopup.classList.add('icon-picker-popup', 'hidden');
 
@@ -115,3 +115,20 @@ export function createIconPickerPopup() {
 
 	return { iconpopup, showPopup, hidePopup };
 }
+
+async function waitForIconSelection() {
+	const { iconpopup, showPopup, hidePopup } = createIconPickerPopup();
+
+	return new Promise((resolve) => {
+		iconpopup.addEventListener('iconSelected', (e) => {
+
+			resolve(e.detail);
+
+		});
+
+		showPopup();
+
+	});
+}
+
+export { waitForIconSelection };

@@ -37,6 +37,12 @@ app.whenReady().then(() => {
 		saveInTemp(note);
 	});
 
+	//save pos of iconsave-icon-pos
+	ipcMain.on('save-icon-pos', (event, folderAndPos) => {
+		const { x, y, folderName } = folderAndPos;
+		updatePosConfig(folderName, x, y);
+	});
+
 	ipcMain.on('open-file', async (event, file) => {
 		if (file) {
 			mainWindow.loadURL(NOTES_WINDOW_WEBPACK_ENTRY + '?file=' + file);
@@ -108,16 +114,39 @@ function saveInTemp(note) {
 }
 
 
+// save pos of icon
+function updatePosConfig(folderName, x, y) {
+	const configFile = path.join(app.getPath('documents'), 'keepersNotes', 'config.json');
+	const fileContent = fs.readFileSync(configFile, 'utf8');
+	const config = JSON.parse(fileContent);
+
+	const folderIndex = config.folders.findIndex(f => f.name === folderName);
+	if (folderIndex === -1) {
+		config.folders.push({ name: folderName, x, y });
+
+	}
+	else {
+		config.folders[folderIndex].x = x;
+		config.folders[folderIndex].y = y;
+	}
+
+	fs.writeFileSync(configFile, JSON.stringify(config, null, 2), 'utf8');
+
+}
+
+
 function getFolderConfig() {
 	const configFile = path.join(app.getPath('documents'), 'keepersNotes', 'config.json');
 
 	// Ensure the directory exists
 	const configDir = path.dirname(configFile);
+
 	if (!fs.existsSync(configDir)) {
 		fs.mkdirSync(configDir, { recursive: true });
 	}
 
 	let config = { folders: [] }; // Default config
+
 
 	if (fs.existsSync(configFile)) {
 		try {
@@ -164,8 +193,7 @@ function updateConfig(folderName, icon) {
 
 	const folderIndex = config.folders.findIndex(f => f.name === folderName);
 	if (folderIndex === -1) {
-		console.error('Folder not found:', folderName);
-		return;
+		config.folders.push({ name: folderName, icon });
 	}
 	else {
 		config.folders[folderIndex].icon = icon;
@@ -220,8 +248,9 @@ function saveInFolder(notesAndFolder) {
 	const { saveName, noteDataString, folder, icon } = notesAndFolder;
 	// if icons os null the dont update the config file
 	const folderPath = path.join(app.getPath('documents'), 'keepersNotes', folder);
-	// see if exists if not create it
-	if (!fs.existsSync) {
+	console.log('folderPath:', folderPath);
+
+	if (!fs.existsSync(folderPath)) {
 		fs.mkdirSync(folderPath, { recursive: true });
 	}
 	if (icon) {
@@ -235,5 +264,4 @@ function saveInFolder(notesAndFolder) {
 	}
 
 	fs.writeFileSync(filePath, noteDataString);
-
 }
